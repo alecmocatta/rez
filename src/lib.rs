@@ -9,34 +9,92 @@ use std::{
 	env, fs::{self, File, OpenOptions}, io, path::{Path, PathBuf}
 };
 
-pub fn docker_images(images: &[&str]) -> Result<(), io::Error> {
-	fs::write(dir().join("docker"), images.join("\n"))
+#[derive(Debug)]
+pub struct Build {
+	dir: PathBuf,
 }
 
-pub fn file(mut src: &File, dest: &Path) -> Result<(), io::Error> {
-	let dest = OpenOptions::new().write(true).create(true).truncate(true).open(dir().join(dest))?;
-	let _ = io::copy(&mut src, &mut &dest)?;
-	Ok(())
+impl Build {
+	/// Call this in your build script (build.rs)
+	pub fn new() -> Result<Self, io::Error> {
+		let mut dir = PathBuf::from(env::var("OUT_DIR").expect("must be called from a build script (build.rs)"));
+		let out = dir.file_name().unwrap();
+		assert_eq!(out, "out");
+		let _ = dir.pop();
+		let id = dir.file_name().unwrap().to_owned();
+		assert!(id.to_str().unwrap().starts_with(&format!("{}-", env::var("CARGO_PKG_NAME").unwrap())));
+		let _ = dir.pop();
+		let build = dir.file_name().unwrap();
+		assert_eq!(build, "build");
+		let _ = dir.pop();
+		dir.push("resources");
+		fs::create_dir(&dir).or_else(|e| (e.kind() == io::ErrorKind::AlreadyExists).then(|| ()).ok_or(e)).unwrap();
+		dir.push(&id);
+		fs::create_dir(&dir).or_else(|e| (e.kind() == io::ErrorKind::AlreadyExists).then(|| ()).ok_or(e)).unwrap();
+		env_set("CARGO_RESOURCE_DIR", Path::new("resources").join(id).to_str().unwrap());
+		// println!("cargo:rerun-if-changed={}", dir.display());
+		Ok(Self { dir })
+	}
+
+	/// Bundle docker images with the binary
+	pub fn docker_images(&self, images: &[&str]) -> Result<(), io::Error> {
+		fs::write(self.dir.join("docker"), images.join("\n"))
+	}
+
+	/// Bundle a file with the binary
+	pub fn path(&self, src: &Path, dest: &Path) -> Result<(), io::Error> {
+		fs::copy(src, dest).map(drop)
+	}
+
+	/// Bundle a file with the binary
+	pub fn file(&self, mut src: &File, dest: &Path) -> Result<(), io::Error> {
+		let dest = OpenOptions::new().write(true).create(true).truncate(true).open(self.dir.join(dest))?;
+		io::copy(&mut src, &mut &dest).map(drop)
+	}
+
+	// Delete any bundled docker images and files
+	pub fn clean(&self) -> Result<(), io::Error> {
+		fs::remove_dir_all(&self.dir)?;
+		fs::create_dir(&self.dir)
+	}
+
+	pub fn dir(&self) -> &Path {
+		&self.dir
+	}
 }
 
-pub fn dir() -> PathBuf {
-	let mut dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+/// Call this in anything that extracts binaries/artifacts from the `target` directory
+pub fn dir_from_out_dir(out_dir: &Path) -> PathBuf {
+	let mut dir = out_dir.to_owned();
 	let out = dir.file_name().unwrap();
 	assert_eq!(out, "out");
 	let _ = dir.pop();
-	let id = dir.file_name().unwrap().to_owned();
-	assert!(id.to_str().unwrap().starts_with(&format!("{}-", env::var("CARGO_PKG_NAME").unwrap())));
+	let package = dir.file_name().unwrap().to_owned();
 	let _ = dir.pop();
 	let build = dir.file_name().unwrap();
 	assert_eq!(build, "build");
 	let _ = dir.pop();
 	dir.push("resources");
-	fs::create_dir(&dir).or_else(|e| (e.kind() == io::ErrorKind::AlreadyExists).then(|| ()).ok_or(e)).unwrap();
-	dir.push(id);
-	fs::create_dir(&dir).or_else(|e| (e.kind() == io::ErrorKind::AlreadyExists).then(|| ()).ok_or(e)).unwrap();
-	env_set("CARGO_RESOURCE_DIR", dir.to_str().unwrap());
-	// println!("cargo:rerun-if-changed={}", dir.display());
+	dir.push(package);
 	dir
+}
+
+#[derive(Debug)]
+pub struct Resources {
+	dir: PathBuf,
+}
+
+impl Resources {
+	/// Call this in your library
+	pub fn new() -> Result<Self, io::Error> {
+		let dir = PathBuf::from(option_env!("CARGO_RESOURCE_DIR").expect("must have called Build::new in your build script (build.rs)"));
+		let dir = env::current_exe()?.join(dir);
+		if dir.exists() { Ok(Self { dir }) } else { Err(io::Error::new(io::ErrorKind::NotFound, "CARGO_RESOURCE_DIR not found")) }
+	}
+
+	pub fn dir(&self) -> &Path {
+		&self.dir
+	}
 }
 
 fn env_set(key: &str, value: &str) {

@@ -1,0 +1,21 @@
+[workspace]
+
+[package]
+name = "rez"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+authors = ["Alec Mocatta <alec@mocatta.net>"]
+categories = ["development-tools"]
+keywords = ["resource", "resources", "bundle", "binary"]
+description = """
+A convention for libraries to bundle resource files alongside binaries.
+"""
+repository = "https://github.com/alecmocatta/rez"
+homepage = "https://github.com/alecmocatta/rez"
+documentation = "https://docs.rs/rez"
+readme = "README.md"
+edition = "2021"
+
+[badges]
+azure-devops = { project = "alecmocatta/rez", pipeline = "tests", build = "10" }
+maintenance = { status = "actively-developed" }

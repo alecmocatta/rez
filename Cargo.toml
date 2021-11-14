@@ -17,5 +17,5 @@ readme = "README.md"
 edition = "2021"
 
 [badges]
-azure-devops = { project = "alecmocatta/rez", pipeline = "tests", build = "10" }
+azure-devops = { project = "alecmocatta/rez", pipeline = "tests", build = "29" }
 maintenance = { status = "actively-developed" }

@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/rez.svg?maxAge=86400)](https://crates.io/crates/rez)
 [![MIT / Apache 2.0 licensed](https://img.shields.io/crates/l/rez.svg?maxAge=2592000)](#License)
-[![Build Status](https://dev.azure.com/alecmocatta/rez/_apis/build/status/tests?branchName=master)](https://dev.azure.com/alecmocatta/rez/_build?definitionId=10)
+[![Build Status](https://dev.azure.com/alecmocatta/rez/_apis/build/status/tests?branchName=master)](https://dev.azure.com/alecmocatta/rez/_build?definitionId=29)
 
 [📖 Docs](https://docs.rs/rez) | [💬 Chat](https://constellation.zulipchat.com/#narrow/stream/213236-subprojects)
 

@@ -36,6 +36,11 @@ impl Build {
 		Ok(Self { dir })
 	}
 
+	/// Bundle other binaries with the binary
+	pub fn binaries(&self, images: &[&str]) -> Result<(), io::Error> {
+		fs::write(self.dir.join("binary"), images.join("\n"))
+	}
+
 	/// Bundle docker images with the binary
 	pub fn docker_images(&self, images: &[&str]) -> Result<(), io::Error> {
 		fs::write(self.dir.join("docker"), images.join("\n"))
@@ -86,10 +91,15 @@ pub struct Resources {
 
 impl Resources {
 	/// Call this in your library
-	pub fn new() -> Result<Self, io::Error> {
-		let dir = PathBuf::from(option_env!("CARGO_RESOURCE_DIR").expect("must have called Build::new in your build script (build.rs)"));
-		let dir = env::current_exe()?.join(dir);
-		if dir.exists() { Ok(Self { dir }) } else { Err(io::Error::new(io::ErrorKind::NotFound, "CARGO_RESOURCE_DIR not found")) }
+	pub fn new(resource_dir: &str) -> Result<Self, io::Error> {
+		// let resource_dir = option_env!("CARGO_RESOURCE_DIR").expect("must have called Build::new in your build script (build.rs)");
+		let dir = PathBuf::from(resource_dir);
+		let dir = env::current_exe()?.parent().unwrap().join(dir);
+		if dir.exists() { Ok(Self { dir }) } else { Err(io::Error::new(io::ErrorKind::NotFound, format!("resource_dir \"{}\" not found", dir.display()))) }
+	}
+
+	pub fn binary(&self, binary: &str) -> Result<PathBuf, io::Error> {
+		Ok(self.dir.join(binary))
 	}
 
 	pub fn dir(&self) -> &Path {

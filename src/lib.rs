@@ -86,24 +86,35 @@ pub fn dir_from_out_dir(out_dir: &Path) -> PathBuf {
 
 #[derive(Debug)]
 pub struct Resources {
-	dir: PathBuf,
+	exe_dir: PathBuf,
+	res_dir: PathBuf,
 }
 
 impl Resources {
 	/// Call this in your library
 	pub fn new(resource_dir: &str) -> Result<Self, io::Error> {
 		// let resource_dir = option_env!("CARGO_RESOURCE_DIR").expect("must have called Build::new in your build script (build.rs)");
-		let dir = PathBuf::from(resource_dir);
-		let dir = env::current_exe()?.parent().unwrap().join(dir);
-		if dir.exists() { Ok(Self { dir }) } else { Err(io::Error::new(io::ErrorKind::NotFound, format!("resource_dir \"{}\" not found", dir.display()))) }
+		let res_dir = PathBuf::from(resource_dir);
+		let exe_dir = env::current_exe()?.parent().unwrap().to_owned();
+		let res_dir = exe_dir.join(res_dir);
+		if res_dir.exists() {
+			Ok(Self { exe_dir, res_dir })
+		} else {
+			Err(io::Error::new(io::ErrorKind::NotFound, format!("resource_dir \"{}\" not found", res_dir.display())))
+		}
 	}
 
 	pub fn binary(&self, binary: &str) -> Result<PathBuf, io::Error> {
-		Ok(self.dir.join(binary))
+		let binary_ = self.exe_dir.join(binary);
+		if binary_.exists() {
+			Ok(binary_)
+		} else {
+			return Err(io::Error::new(io::ErrorKind::NotFound, format!("binary \"{}\" not found", binary)));
+		}
 	}
 
 	pub fn dir(&self) -> &Path {
-		&self.dir
+		&self.res_dir
 	}
 }
 

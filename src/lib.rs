@@ -5,6 +5,8 @@
 //! </strong></p>
 //!
 
+#![allow(clippy::unnecessary_lazy_evaluations, clippy::disallowed_methods, clippy::needless_return)]
+
 use std::{
 	env, fs::{self, File, OpenOptions}, io, path::{Path, PathBuf}
 };
@@ -95,7 +97,10 @@ impl Resources {
 	pub fn new(resource_dir: &str) -> Result<Self, io::Error> {
 		// let resource_dir = option_env!("CARGO_RESOURCE_DIR").expect("must have called Build::new in your build script (build.rs)");
 		let res_dir = PathBuf::from(resource_dir);
-		let exe_dir = env::current_exe()?.parent().unwrap().to_owned();
+		let mut exe_dir = env::current_exe()?.parent().unwrap().to_owned();
+		if exe_dir.ends_with("deps") {
+			exe_dir = exe_dir.parent().unwrap().to_owned();
+		}
 		let res_dir = exe_dir.join(res_dir);
 		if res_dir.exists() {
 			Ok(Self { exe_dir, res_dir })
@@ -109,7 +114,7 @@ impl Resources {
 		if binary_.exists() {
 			Ok(binary_)
 		} else {
-			return Err(io::Error::new(io::ErrorKind::NotFound, format!("binary \"{}\" not found", binary)));
+			return Err(io::Error::new(io::ErrorKind::NotFound, format!("binary \"{binary}\" not found")));
 		}
 	}
 
@@ -119,5 +124,5 @@ impl Resources {
 }
 
 fn env_set(key: &str, value: &str) {
-	println!("cargo:rustc-env={}={}", key, value);
+	println!("cargo:rustc-env={key}={value}");
 }

@@ -2,7 +2,7 @@
 
 [package]
 name = "rez"
-version = "0.1.3"
+version = "0.1.4"
 license = "MIT OR Apache-2.0"
 authors = ["Alec Mocatta <alec@mocatta.net>"]
 categories = ["development-tools"]
